@@ -1,36 +1,95 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Expert Feedback System
 
-## Getting Started
+HR can record consultation feedback for users. On submission, feedback is saved to MongoDB and an email is sent to the user with a secure link to view their feedback.
 
-First, run the development server:
+### Stack
+- Frontend: Next.js 14 (App Router), TypeScript, TailwindCSS, shadcn/ui
+- Backend: Next.js Route Handlers (API), NextAuth (Google), Mongoose
+- DB: MongoDB Atlas
+- Email: Resend (or SMTP alternative)
 
+---
+
+## Local Setup
+
+1) Install deps
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Create `.env.local`
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=REPLACE_WITH_RANDOM_BASE64_32
+APP_BASE_URL=http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Comma-separated: exact emails or domains prefixed with @
+HR_ALLOWED_EMAILS=hr@example.com,@yourcompany.com
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Google OAuth (for HR sign-in)
+GOOGLE_CLIENT_ID=REPLACE_ME
+GOOGLE_CLIENT_SECRET=REPLACE_ME
 
-## Learn More
+# MongoDB
+MONGODB_URI=REPLACE_ME
+MONGODB_DB=expert-feedback
 
-To learn more about Next.js, take a look at the following resources:
+# Resend (emails)
+RESEND_API_KEY=REPLACE_ME
+EMAIL_FROM=no-reply@yourdomain.com
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+3) Run
+```bash
+npm run dev
+# http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Usage
+- HR Login: `/hr/login`
+- HR Feedback Form: `/hr/feedback/new`
+- User View (tokenized): `/view/[token]`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Flow:
+1. HR signs in with a Google account allowed by `HR_ALLOWED_EMAILS`.
+2. HR submits the feedback form.
+3. App saves to MongoDB and emails the user a secure link.
+4. User opens `/view/[token]` to read-only view their feedback.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Deployment
+
+Recommend Vercel. Set the same env vars in Vercel Project Settings.
+
+Required envs in production:
+- NEXTAUTH_URL=https://<your-vercel-domain>
+- NEXTAUTH_SECRET
+- APP_BASE_URL=https://<your-vercel-domain>
+- HR_ALLOWED_EMAILS
+- GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+- MONGODB_URI / MONGODB_DB
+- RESEND_API_KEY / EMAIL_FROM
+
+---
+
+## Email Provider
+Default integration is Resend. Verify sending domain or use `onboarding@resend.dev` for testing.
+
+Alternative: configure SMTP + Nodemailer and update the API route accordingly.
+
+---
+
+## Demo Credentials (fill in before sharing)
+- HR: hr@example.com
+- User: user@example.com
+
+---
+
+## Security Notes
+- HR-only routes enforced by NextAuth + allowlist.
+- User access is tokenized (`/view/[token]`).
+- Server-side validation with zod and API checks.
+
