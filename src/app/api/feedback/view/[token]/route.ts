@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDB } from "@/lib/db";
-import { Feedback } from "@/models/Feedback";
+import { connectToDB } from "../../../../../lib/db";
+import { Feedback } from "../../../../../models/Feedback";
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: Promise<{ token: string }> }
 ) {
-  const { token } = params;
+  const { token } = await context.params;
   if (!token) return NextResponse.json({ error: "Token required" }, { status: 400 });
   await connectToDB();
   const doc = await Feedback.findOne({ viewToken: token }).lean();
