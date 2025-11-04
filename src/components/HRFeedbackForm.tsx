@@ -3,12 +3,11 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Textarea } from "./ui/textarea";
+import { Label } from "./ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 
 const Schema = z.object({
   userName: z.string().min(2),
@@ -17,12 +16,19 @@ const Schema = z.object({
   observations: z.string().min(5),
   recommendations: z.string().min(5),
   rating: z
-    .string()
-    .optional()
-    .transform((v) => (v ? Number(v) : undefined))
-    .refine((v) => v === undefined || (typeof v === "number" && v >= 0 && v <= 10), {
-      message: "Rating must be between 0 and 10",
-    }),
+    .preprocess((v) => {
+      // RHF with valueAsNumber passes NaN when empty; treat empty/NaN as undefined
+      if (v === "" || v === null || v === undefined) return undefined;
+      if (typeof v === "number" && Number.isNaN(v)) return undefined;
+      return v;
+    }, z
+      .number()
+      .refine((n) => typeof n === "number" && !Number.isNaN(n), {
+        message: "Rating must be a number",
+      })
+      .min(0, "Rating must be between 0 and 10")
+      .max(10, "Rating must be between 0 and 10")
+      .optional()),
 });
 
 type FormValues = z.infer<typeof Schema>;
@@ -92,7 +98,7 @@ export default function HRFeedbackForm() {
             </div>
             <div>
               <Label htmlFor="rating">Overall Rating (0-10)</Label>
-              <Input id="rating" type="number" min={0} max={10} step={1} {...register("rating")} />
+              <Input id="rating" type="number" min={0} max={10} step={1} {...register("rating", { valueAsNumber: true })} />
               {formState.errors.rating && (
                 <p className="text-sm text-red-600">{formState.errors.rating.message as string}</p>
               )}
