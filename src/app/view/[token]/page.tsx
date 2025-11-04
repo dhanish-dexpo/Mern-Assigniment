@@ -1,11 +1,11 @@
 import { connectToDB } from "../../../lib/db";
-import { Feedback } from "../../../models/Feedback";
+import { Feedback, type IFeedback } from "../../../models/Feedback";
 import { format } from "date-fns";
 
 export default async function Page({ params }: { params: { token: string } }) {
   const { token } = params;
   await connectToDB();
-  const doc = await Feedback.findOne({ viewToken: token }).lean();
+  const doc = await Feedback.findOne({ viewToken: token }).lean<IFeedback>();
   if (!doc) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">

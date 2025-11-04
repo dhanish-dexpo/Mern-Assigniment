@@ -16,19 +16,11 @@ const Schema = z.object({
   observations: z.string().min(5),
   recommendations: z.string().min(5),
   rating: z
-    .preprocess((v) => {
-      // RHF with valueAsNumber passes NaN when empty; treat empty/NaN as undefined
-      if (v === "" || v === null || v === undefined) return undefined;
-      if (typeof v === "number" && Number.isNaN(v)) return undefined;
-      return v;
-    }, z
-      .number()
-      .refine((n) => typeof n === "number" && !Number.isNaN(n), {
-        message: "Rating must be a number",
-      })
-      .min(0, "Rating must be between 0 and 10")
-      .max(10, "Rating must be between 0 and 10")
-      .optional()),
+    .number()
+    .min(0, "Rating must be between 0 and 10")
+    .max(10, "Rating must be between 0 and 10")
+    .optional()
+    .or(z.nan().transform(() => undefined)),
 });
 
 type FormValues = z.infer<typeof Schema>;
